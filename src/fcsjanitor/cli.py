@@ -130,8 +130,10 @@ def clean_up_this_mess(
             newfilename = output_dir.joinpath(f"{i.stem}{suffix}")
         else:
             newfilename = output_dir.joinpath(f"{i.stem}")
-
+        newfilename.parent.mkdir(parents=True, exist_ok=True)
+            
         if output_format == "fcs":
+            
             remove_indices = adata.obs_names.difference(cleaned_adata.obs_names)
             fk_fcs = fk.Sample(i, ignore_offset_error=True)
             fk_fcs.set_flagged_events(remove_indices.astype(int).to_list())
