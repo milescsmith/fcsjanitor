@@ -51,6 +51,7 @@ def take_out_the_trash(
     initial_number_of_events = df.shape[0]
     logger.debug(f"starting number of events: {df.shape[0]}")
 
+    
     for marker in tqdm(filter_limits):
         rprint(f"processing [green]{marker}[/green]")
         if method == "sd":
@@ -83,9 +84,8 @@ def take_out_the_trash(
     rprint(f"removed [red]{initial_number_of_events - df.shape[0]}[/red] overall, or "
         f"[orange]{100*((initial_number_of_events - df.shape[0])/initial_number_of_events):.2f}%[/orange] of the total")
 
-    adata = adata[df.index, :].copy()
-    if not inplace:
-        return adata
+    
+    return adata[df.index, :].copy()
 
 
 def export_fcs(filename: str, df: pd.DataFrame, original_fcs_channels: list[str]) -> None:

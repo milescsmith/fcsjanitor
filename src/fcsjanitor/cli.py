@@ -91,20 +91,30 @@ def clean_up_this_mess(
         logger.add(stderr, level="ERROR")
         logger.add(f"janitor_{datetime.now().strftime('%d-%m-%Y--%H-%M-%S')}.log", level="ERROR")
 
-    filelist = unpack(files)
+    if not isinstance(files, list):
+        files = [files]
+    for _ in files:
+        if _.is_dir():
+            logger.debug(f"{_} is a dir")
+        elif _.is_file():
+            logger.debug(f"{_} is a file")
+        else:
+            logger.debug(f"I don't know what {_} is")
+
+    filelist = unpack([list(_.glob("*.fcs")) if _.is_dir() else _ for _ in files])
 
     logger.debug(f"{filelist=}")
 
     for i in tqdm(filelist):
         original_fcs_meta, original_fcs_data = fcsparser.parse(i, reformat_meta=True)
-        # TODO: I don't really things pytometry is needed here.  Will remove later, 
+        # TODO: I don't really think pytometry is needed here.  Will remove later, 
         # but for now this works.
         adata = pm.io.read_fcs(i)
         pm.pp.split_signal(
             adata=adata, var_key="channel", option="element", data_type="cytof"
         )
 
-        take_out_the_trash(adata, method=method)  # , **extra_args)
+        adata = take_out_the_trash(adata, method=method)  # , **extra_args)
 
         df = sc.get.obs_df(
             adata=adata,
