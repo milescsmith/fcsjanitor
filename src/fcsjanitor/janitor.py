@@ -32,6 +32,7 @@ def take_out_the_trash(
             "191Ir_DNA1": 2,
             "193Ir_DNA2": 1,
         }
+        removed_counts = {k:0 for k in filter_limits}
     else:
         filter_limits = {
             "140Ce_Beads": {"lower": 0.000, "upper": 0.995},
@@ -44,6 +45,7 @@ def take_out_the_trash(
             "191Ir_DNA1": {"lower": 0.010, "upper": 0.960},
             "193Ir_DNA2": {"lower": 0.015, "upper": 0.985},
         }
+        removed_counts = {k:0 for k in filter_limits}
 
     logger.debug(f"using following as cutoffs: {filter_limits}")
     df = sc.get.obs_df(adata, keys=list(filter_limits.keys()))
@@ -51,9 +53,8 @@ def take_out_the_trash(
     initial_number_of_events = df.shape[0]
     logger.debug(f"starting number of events: {df.shape[0]}")
 
-    
     for marker in tqdm(filter_limits):
-        rprint(f"processing [green]{marker}[/green]")
+        current_count = df.shape[0]
         if method == "sd":
             num_sd = filter_limits[marker]
             upper = np.mean(df[marker]) + (num_sd * np.std(df[marker]))
@@ -73,11 +74,10 @@ def take_out_the_trash(
                 ),
                 :,
             ]
-        logger.debug(
-            f"{initial_number_of_events - df.shape[0]} events removed for {marker}"
-        )
-        rprint(f"Removed [red]{initial_number_of_events - df.shape[0]}[/red] events")
+        removed_counts[marker] = current_count-df.shape[0]
 
+    logger.debug(f"removed {removed_counts}"
+    )
     logger.debug(f"removed {initial_number_of_events - df.shape[0]} total")
     logger.debug(f"{100*((initial_number_of_events - df.shape[0])/initial_number_of_events):.2f}%"
     )

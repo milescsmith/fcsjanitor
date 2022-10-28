@@ -84,12 +84,11 @@ def clean_up_this_mess(
     # if len(extra.args) > 0:
     #     extra_args = parse_extras(extra.args)
 
+    logger.add(f"janitor_{datetime.now().strftime('%d-%m-%Y--%H-%M-%S')}.log", level="DEBUG")
     if verbose:
         logger.add(stderr, level="DEBUG")
-        logger.add(f"janitor_{datetime.now().strftime('%d-%m-%Y--%H-%M-%S')}.log", level="DEBUG")
     else:
         logger.add(stderr, level="ERROR")
-        logger.add(f"janitor_{datetime.now().strftime('%d-%m-%Y--%H-%M-%S')}.log", level="ERROR")
 
     if not isinstance(files, list):
         files = [files]
