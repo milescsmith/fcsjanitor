@@ -1,12 +1,11 @@
+from datetime import datetime
 from enum import Enum
 from pathlib import Path
 from sys import stderr
 from typing import Optional
-from datetime import datetime
 
-import fcsparser
+import flowkit as fk
 import pytometry as pm
-import scanpy as sc
 import typer
 from loguru import logger
 from rich.console import Console
@@ -14,7 +13,7 @@ from rich.traceback import install
 from tqdm.autonotebook import tqdm
 
 from fcsjanitor import __version__
-from fcsjanitor.janitor import export_fcs, take_out_the_trash
+from fcsjanitor.janitor import take_out_the_trash
 
 install(show_locals=True)
 
@@ -26,6 +25,11 @@ console = Console()
 class FilterMethod(str, Enum):
     sd = "sd"
     quantile = "quantile"
+
+
+class OutputFormat(str, Enum):
+    anndata = "anndata"
+    fcs = "fcs"
 
 
 def version_callback(value: bool) -> None:
@@ -62,11 +66,11 @@ def unpack(iterable):
     context_settings={"allow_extra_args": True, "ignore_unknown_options": True},
 )
 def clean_up_this_mess(
-    files: list[Path] = typer.Option(
+    input_files: list[Path] = typer.Option(
         ...,
-        "-f",
-        "--files",
-        help="Either a list of files or directories in which to look for FCS files",
+        "-i",
+        "--input",
+        help="Either a list of input files or directories in which to look for FCS files",
     ),
     output_dir: Optional[Path] = typer.Option(
         Path.cwd(), "-o", "--output", help="Location to write cleaned FCS files"
@@ -77,6 +81,12 @@ def clean_up_this_mess(
     suffix: Optional[str] = typer.Option(
         "_cleaned", "-s", "--suffix", help="Suffix to append to the new files"
     ),
+    output_format: OutputFormat = typer.Option(
+        OutputFormat.fcs,
+        "-f",
+        "--format",
+        help="Save the cleaned data as an FCS or AnnData object?",
+    ),
     verbose: bool = typer.Option(False, "-v", "--verbose"),
 ) -> None:
     """Clean one or more CyTOF FCS files."""
@@ -84,15 +94,17 @@ def clean_up_this_mess(
     # if len(extra.args) > 0:
     #     extra_args = parse_extras(extra.args)
 
-    logger.add(f"janitor_{datetime.now().strftime('%d-%m-%Y--%H-%M-%S')}.log", level="DEBUG")
+    logger.add(
+        f"janitor_{datetime.now().strftime('%d-%m-%Y--%H-%M-%S')}.log", level="DEBUG"
+    )
     if verbose:
         logger.add(stderr, level="DEBUG")
     else:
         logger.add(stderr, level="ERROR")
 
-    if not isinstance(files, list):
-        files = [files]
-    for _ in files:
+    if not isinstance(input_files, list):
+        input_files = [input_files]
+    for _ in input_files:
         if _.is_dir():
             logger.debug(f"{_} is a dir")
         elif _.is_file():
@@ -100,34 +112,31 @@ def clean_up_this_mess(
         else:
             logger.debug(f"I don't know what {_} is")
 
-    filelist = unpack([list(_.glob("*.fcs")) if _.is_dir() else _ for _ in files])
+    filelist = unpack([list(_.glob("*.fcs")) if _.is_dir() else _ for _ in input_files])
 
     logger.debug(f"{filelist=}")
 
     for i in tqdm(filelist):
-        original_fcs_meta, original_fcs_data = fcsparser.parse(i, reformat_meta=True)
-        # TODO: I don't really think pytometry is needed here.  Will remove later, 
+        # TODO: I don't really think pytometry is needed here.  Will remove later,
         # but for now this works.
         adata = pm.io.read_fcs(i)
         pm.pp.split_signal(
             adata=adata, var_key="channel", option="element", data_type="cytof"
         )
 
-        adata = take_out_the_trash(adata, method=method)  # , **extra_args)
-
-        df = sc.get.obs_df(
-            adata=adata,
-            keys=adata.var_names.to_list()
-            + ["Time", "Event_length", "Center", "Offset", "Width", "Residual"],
-        )
+        cleaned_adata = take_out_the_trash(adata, method=method)  # , **extra_args)
 
         if suffix is not None:
-            newfilename = i.parent.joinpath(f"{i.stem}_{suffix}{i.suffix}")
+            newfilename = output_dir.joinpath(f"{i.stem}{suffix}")
         else:
-            newfilename = i
+            newfilename = output_dir.joinpath(f"{i.stem}")
 
-        export_fcs(
-            filename=newfilename,
-            df=df,
-            original_fcs_channels=list(original_fcs_meta["_channel_names_"]),
-        )
+        if output_format == "fcs":
+            remove_indices = adata.obs_names.difference(cleaned_adata.obs_names)
+            fk_fcs = fk.Sample(i, ignore_offset_error=True)
+            fk_fcs.set_flagged_events(remove_indices.astype(int).to_list())
+            fk_fcs.export(
+                newfilename.with_suffix(".fcs"), source="raw", exclude_flagged=True
+            )
+        elif output_format == "anndata":
+            cleaned_adata.write(newfilename.with_suffix(".h5ad"))
