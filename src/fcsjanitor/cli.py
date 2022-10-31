@@ -79,7 +79,7 @@ def clean_up_this_mess(
         FilterMethod.sd, "-m", "--method", help="Method to use when filtering events"
     ),
     suffix: Optional[str] = typer.Option(
-        "_cleaned", "-s", "--suffix", help="Suffix to append to the new files"
+        None, "-s", "--suffix", help="Suffix to append to the new files"
     ),
     output_format: OutputFormat = typer.Option(
         OutputFormat.fcs,
@@ -88,6 +88,10 @@ def clean_up_this_mess(
         help="Save the cleaned data as an FCS or AnnData object?",
     ),
     verbose: bool = typer.Option(False, "-v", "--verbose"),
+    version: Optional[bool] = typer.Option(
+        None, "--version", callback=version_callback
+    ),
+
 ) -> None:
     """Clean one or more CyTOF FCS files."""
 
@@ -118,7 +122,7 @@ def clean_up_this_mess(
 
     for i in tqdm(filelist):
         # TODO: I don't really think pytometry is needed here.  Will remove later,
-        # but for now this works.
+        # but for now this works so it stays.
         adata = pm.io.read_fcs(i)
         pm.pp.split_signal(
             adata=adata, var_key="channel", option="element", data_type="cytof"
