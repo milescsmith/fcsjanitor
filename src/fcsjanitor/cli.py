@@ -2,11 +2,12 @@ from datetime import datetime
 from enum import Enum
 from pathlib import Path
 from sys import stderr
-from typing import Optional
+from typing import Annotated, Optional
 
 import flowkit as fk
 import pytometry as pm
 import typer
+from dateutil import tz
 from loguru import logger
 from rich.console import Console
 from rich.traceback import install
@@ -21,6 +22,8 @@ logger.remove()
 
 console = Console()
 
+DEFAULT_OUTPUT_DIR = Path().cwd()
+
 
 class FilterMethod(str, Enum):
     sd = "sd"
@@ -32,9 +35,9 @@ class OutputFormat(str, Enum):
     fcs = "fcs"
 
 
-def version_callback(value: bool) -> None:
+def version_callback(show_version: bool) -> None: # noqa FBT002
     """Prints the version of the package."""
-    if value:
+    if show_version:
         console.print(f"[yellow]fcsjanitor[/] version: [bold blue]{__version__}[/]")
         raise typer.Exit()
 
@@ -46,6 +49,7 @@ app = typer.Typer(
     ),
     add_completion=False,
     rich_markup_mode="markdown",
+    no_args_is_help=True
 )
 
 
@@ -66,31 +70,50 @@ def unpack(iterable):
     context_settings={"allow_extra_args": True, "ignore_unknown_options": True},
 )
 def clean_up_this_mess(
-    input_files: list[Path] = typer.Option(
-        ...,
-        "-i",
-        "--input",
-        help="Either a list of input files or directories in which to look for FCS files",
-    ),
-    output_dir: Optional[Path] = typer.Option(
-        Path.cwd(), "-o", "--output", help="Location to write cleaned FCS files"
-    ),
-    method: FilterMethod = typer.Option(
-        FilterMethod.sd, "-m", "--method", help="Method to use when filtering events"
-    ),
-    suffix: Optional[str] = typer.Option(
-        None, "-s", "--suffix", help="Suffix to append to the new files"
-    ),
-    output_format: OutputFormat = typer.Option(
-        OutputFormat.fcs,
-        "-f",
-        "--format",
-        help="Save the cleaned data as an FCS or AnnData object?",
-    ),
-    verbose: bool = typer.Option(False, "-v", "--verbose"),
-    version: Optional[bool] = typer.Option(
-        None, "--version", callback=version_callback
-    ),
+    input_files: Annotated[
+        list[Path],
+        typer.Option(
+            "-i",
+            "--input",
+            help="Either a list of input files or directories in which to look for FCS files",
+        )
+    ],
+    output_dir: Annotated[
+        Path,
+        typer.Option(
+            "-o", "--output", help="Location to write cleaned FCS files"
+        )
+    ] = DEFAULT_OUTPUT_DIR,
+    method: Annotated[
+        str,
+        typer.Option(
+            "-m", "--method", help="Method to use when filtering events"
+        )
+    ] = FilterMethod.sd,
+    suffix: Annotated[
+        Optional[str], # noqa UP007
+        typer.Option(
+            "-s", "--suffix", help="Suffix to append to the new files"
+        )
+    ] = None,
+    output_format: Annotated[
+        OutputFormat,
+        typer.Option(
+            "-f",
+            "--format",
+            help="Save the cleaned data as an FCS or AnnData object?",
+        )
+    ] = OutputFormat.fcs,
+    verbose: Annotated[ # noqa FBT002
+        bool,
+        typer.Option("-v", "--verbose")
+    ] = False,
+    version: Annotated[ # noqa FBT002
+        bool,
+        typer.Option(
+            "--version", callback=version_callback
+        )
+    ] = False,
 
 ) -> None:
     """Clean one or more CyTOF FCS files."""
@@ -99,15 +122,15 @@ def clean_up_this_mess(
     #     extra_args = parse_extras(extra.args)
 
     logger.add(
-        f"janitor_{datetime.now().strftime('%d-%m-%Y--%H-%M-%S')}.log", level="DEBUG"
+        f"janitor_{datetime.now(tz=tz.tzlocal()).strftime('%d-%m-%Y--%H-%M-%S')}.log", level="DEBUG"
     )
     if verbose:
         logger.add(stderr, level="DEBUG")
     else:
         logger.add(stderr, level="ERROR")
 
-    if not isinstance(input_files, list):
-        input_files = [input_files]
+    # if not isinstance(input_files, list):
+    #     input_files = [input_files]
     for _ in input_files:
         if _.is_dir():
             logger.debug(f"{_} is a dir")
@@ -127,17 +150,16 @@ def clean_up_this_mess(
         pm.pp.split_signal(
             adata=adata, var_key="channel", option="element", data_type="cytof"
         )
-
-        cleaned_adata = take_out_the_trash(adata, method=method)  # , **extra_args)
+        cleaned_adata = take_out_the_trash(adata, method=method) # type: ignore
 
         if suffix is not None:
             newfilename = output_dir.joinpath(f"{i.stem}{suffix}")
         else:
             newfilename = output_dir.joinpath(f"{i.stem}")
         newfilename.parent.mkdir(parents=True, exist_ok=True)
-            
+
         if output_format == "fcs":
-            
+
             remove_indices = adata.obs_names.difference(cleaned_adata.obs_names)
             fk_fcs = fk.Sample(i, ignore_offset_error=True)
             fk_fcs.set_flagged_events(remove_indices.astype(int).to_list())

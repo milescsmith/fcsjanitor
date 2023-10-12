@@ -139,3 +139,4 @@ cython_debug/
 .env
 **/*.ipynb
 **/*.fcs
+README_files/*
