@@ -7,23 +7,22 @@ license = "GPL-3.0"
 readme = "README.md"
 
 [tool.poetry.dependencies]
-python = "^3.9"
+python = "^3.10"
 pytometry = "^0.1.2"
 scanpy = "^1.9.1"
-tqdm = "^4.64.1"
+tqdm = "^4.66.1"
 numpy = "^1.23.4"
-loguru = "^0.6.0"
-typer = "^0.6.1"
+loguru = "^0.7.2"
+typer = "^0.9.0"
 rich = "^13.6.0"
 flowkit = "^1.0.1"
 
 [tool.poetry.group.dev.dependencies]
-black = "^22.10.0"
-pytest = "^7.2.0"
-flake8 = "^5.0.4"
+black = "^23.9.1"
+pytest = "^7.4.2"
 mypy = "^0.982"
-ipython = "^8.5.0"
-jupyterlab = "^3.5.0"
+ruff = "^0.0.292"
+types-python-dateutil = "^2.8.19.14"
 
 [build-system]
 requires = ["poetry-core"]
@@ -31,3 +30,136 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.poetry.scripts]
 janitor = "fcsjanitor.cli:app"
+
+[tool.mypy]
+# mypy configurations: http://bit.ly/2zEl9WI
+python_version = 3.10
+pretty = true
+allow_redefinition = false
+check_untyped_defs = true
+disallow_any_generics = true
+disallow_incomplete_defs = true
+follow_imports_for_stubs = false
+ignore_missing_imports = false
+implicit_reexport = false
+strict_optional = true
+strict_equality = true
+no_implicit_optional = true
+warn_no_return = true
+warn_unused_ignores = true
+warn_redundant_casts = true
+warn_unused_configs = true
+warn_return_any = true
+warn_unreachable = true
+show_error_codes = true
+show_column_numbers = true
+show_error_context = true
+
+[tool.isort]
+known_typing = "typing,types,typing_extensions,mypy,mypy_extensions"
+sections = "FUTURE,TYPING,STDLIB,THIRDPARTY,FIRSTPARTY,LOCALFOLDER"
+include_trailing_comma = true
+default_section = "FIRSTPARTY"
+multi_line_output = 3
+indent = 4
+force_grid_wrap = 0
+use_parentheses = true
+line_length = 80
+
+[tool.black]
+line-length = 120
+target-version = ["py310"]
+skip-string-normalization = true
+
+[tool.ruff]
+target-version = "py310"
+line-length = 120
+select = [
+    "A",
+    "ARG",
+    "B",
+    "C",
+    "DTZ",
+    "E",
+    "EM",
+    "F",
+    "FBT",
+    "I",
+    "I001",
+    "ICN",
+    "ISC",
+    "N",
+    "PLC",
+    "PLE",
+    "PLR",
+    "PLW",
+    "Q",
+    "RUF",
+    "S",
+    "T",
+    "TID",
+    "UP",
+    "W",
+    "YTT",
+]
+# E127, E128 are hard to silence in certain nested formatting situations.
+# E265, E266 talk about comment formatting which is too opinionated.
+# E402 warns on imports coming after statements. There are important use cases
+# like demandimport (https://fburl.com/demandimport) that require statements
+# before imports.
+# E501 is not flexible enough, we're using B950 instead.
+# E722 is a duplicate of B001.
+# P207 is a duplicate of B003.
+# W503 talks about operator formatting which is too opinionated.
+# E203 conflicts with Black
+ignore = [
+    "B027",
+    "E265",
+    "E266",
+    "E402",
+    "E501",
+    "E722",
+    "E203",
+    "E241",
+    "FBT003",
+    "S105",
+    "S106",
+    "S107",
+    "C901",
+    "PLR0911",
+    "PLR0912",
+    "PLR0913",
+    "PLR0915",
+]
+unfixable = [
+    "F401",
+    "UP007",
+]
+exclude = [
+    ".git",
+    ".hg",
+    "__pycache__",
+    "_bin/*",
+    "_build/*",
+    "_ig_fbcode_wheel/*",
+    "buck-out/*",
+    "third-party-buck/*",
+    "third-party2/*",
+    "dist",
+    ".venv",
+    ".nox",
+    ".mypy_cache",
+    ".pytype",
+    ".svn",
+    "__pypackages__",
+]
+src = ["src"]
+
+[tool.ruff.mccabe]
+max-complexity = 50
+
+[tool.ruff.isort]
+known-first-party = ["readcounts"]
+
+[tool.ruff.flake8-tidy-imports]
+ban-relative-imports = "all"
