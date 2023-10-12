@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "fcsjanitor"
-version = "0.6.0"
+version = "0.7.0"
 description = "Clean up CyTOF FCS files as per the Standard Biotools recommendations"
 authors = ["Miles Smith <miles-smith@omrf.org>"]
 license = "GPL-3.0"
@@ -14,8 +14,8 @@ tqdm = "^4.64.1"
 numpy = "^1.23.4"
 loguru = "^0.6.0"
 typer = "^0.6.1"
-rich = "^12.6.0"
-flowkit = "^0.9.3"
+rich = "^13.6.0"
+flowkit = "^1.0.1"
 
 [tool.poetry.group.dev.dependencies]
 black = "^22.10.0"
