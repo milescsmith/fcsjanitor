@@ -20,7 +20,7 @@ flowkit = "^1.0.1"
 [tool.poetry.group.dev.dependencies]
 black = "^23.9.1"
 pytest = "^7.4.2"
-mypy = "^0.982"
+mypy = "^1.0.0"
 ruff = "^0.0.292"
 types-python-dateutil = "^2.8.19.14"
 
