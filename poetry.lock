@@ -1763,8 +1763,8 @@ files = [
 
 [package.dependencies]
 numpy = [
-    {version = ">=1.21.0", markers = "python_version >= \"3.10\" and python_version < \"3.11\""},
     {version = ">=1.23.2", markers = "python_version >= \"3.11\""},
+    {version = ">=1.21.0", markers = "python_version >= \"3.10\" and python_version < \"3.11\""},
 ]
 python-dateutil = ">=2.8.1"
 pytz = ">=2020.1"
@@ -2374,13 +2374,13 @@ files = [
 
 [[package]]
 name = "scanpy"
-version = "1.9.5"
+version = "1.9.6"
 description = "Single-Cell Analysis in Python."
 optional = false
 python-versions = ">=3.8"
 files = [
-    {file = "scanpy-1.9.5-py3-none-any.whl", hash = "sha256:0795625d5aaf4b2e88b5328cf8cbefe2f5ebc26d45de44acf49ad9763382a301"},
-    {file = "scanpy-1.9.5.tar.gz", hash = "sha256:1d90f95cd5e103c9e0cc41fd84c1f2d81d86d6337cbe294316578ed071d39d82"},
+    {file = "scanpy-1.9.6-py3-none-any.whl", hash = "sha256:30a96bfa2a56fefc810fc6407d7488c56b4c40fd1d14090a4d572e1fabf89bef"},
+    {file = "scanpy-1.9.6.tar.gz", hash = "sha256:b2f24e6f220cb9d4d893b24f6899ba1a14cf2fef50b7e05bb37980c78de8a013"},
 ]
 
 [package.dependencies]
@@ -2393,11 +2393,11 @@ networkx = ">=2.3"
 numba = ">=0.41.0"
 numpy = ">=1.17.0"
 packaging = "*"
-pandas = ">=1.0"
+pandas = ">=1.1.1,<2.1.2 || >2.1.2"
 patsy = "*"
 scikit-learn = ">=0.24"
 scipy = ">=1.4"
-seaborn = "*"
+seaborn = "!=0.13.0"
 session-info = "*"
 statsmodels = ">=0.10.0rc2"
 tqdm = "*"
@@ -2406,7 +2406,7 @@ umap-learn = ">=0.3.10"
 [package.extras]
 bbknn = ["bbknn"]
 dask = ["dask[array] (!=2.17.0)"]
-dev = ["black (>=20.8b1)", "docutils", "setuptools_scm"]
+dev = ["black (>=20.8b1)", "docutils", "setuptools-scm"]
 doc = ["matplotlib (!=3.6.1)", "myst-parser", "scanpy[paga]", "scanpydoc[typehints] (>=0.7.7,<0.8)", "sphinx (>=4.4)", "sphinx-rtd-theme (>=1.0)"]
 harmony = ["harmonypy"]
 leiden = ["igraph (>=0.10)", "leidenalg (>=0.9)"]
@@ -2644,8 +2644,8 @@ files = [
 
 [package.dependencies]
 numpy = [
-    {version = ">=1.22.3", markers = "python_version == \"3.10\" and platform_system == \"Windows\" and platform_python_implementation != \"PyPy\""},
     {version = ">=1.18", markers = "python_version != \"3.10\" or platform_system != \"Windows\" or platform_python_implementation == \"PyPy\""},
+    {version = ">=1.22.3", markers = "python_version == \"3.10\" and platform_system == \"Windows\" and platform_python_implementation != \"PyPy\""},
 ]
 packaging = ">=21.3"
 pandas = ">=1.0"
