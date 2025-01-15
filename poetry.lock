@@ -645,12 +645,12 @@ test = ["numpy (>=1.17)"]
 
 [[package]]
 name = "flowkit"
-version = "1.2.2"
+version = "1.2.3"
 description = "Flow Cytometry Toolkit"
 optional = false
 python-versions = "*"
 files = [
-    {file = "flowkit-1.2.2.tar.gz", hash = "sha256:772e925062b1124661c28c1bfe13de1a4384fb8aba8a0e22d710a7e89892cbba"},
+    {file = "flowkit-1.2.3.tar.gz", hash = "sha256:4b4feb0386399a7e9ff4cd26bd6f81eb87ab13cf7869e8b1f40c9ec6f378552f"},
 ]
 
 [package.dependencies]
