@@ -1,8 +1,9 @@
+from collections.abc import Iterable
 from datetime import datetime
 from enum import Enum
 from pathlib import Path
 from sys import stderr
-from typing import Annotated, Optional
+from typing import Annotated, Any
 
 import flowkit as fk
 import pytometry as pm
@@ -16,7 +17,7 @@ from tqdm.autonotebook import tqdm
 from fcsjanitor import __version__
 from fcsjanitor.janitor import take_out_the_trash
 
-install(show_locals=True)
+_ = install(show_locals=True)
 
 logger.remove()
 
@@ -35,7 +36,7 @@ class OutputFormat(str, Enum):
     fcs = "fcs"
 
 
-def version_callback(show_version: bool) -> None: # noqa FBT002
+def version_callback(show_version: bool) -> None:
     """Prints the version of the package."""
     if show_version:
         console.print(f"[yellow]fcsjanitor[/] version: [bold blue]{__version__}[/]")
@@ -44,16 +45,14 @@ def version_callback(show_version: bool) -> None: # noqa FBT002
 
 app = typer.Typer(
     name="fcsjanitor",
-    help=(
-        "Utility to automatically clean junk from CyTOF FCS files according to Standard Biotools Recommendations"
-    ),
+    help=("Utility to automatically clean junk from CyTOF FCS files according to Standard Biotools Recommendations"),
     add_completion=False,
     rich_markup_mode="markdown",
-    no_args_is_help=True
+    no_args_is_help=True,
 )
 
 
-def unpack(iterable):
+def unpack(iterable: Iterable[Any]):
     logger.debug(f"{iterable=}")
     for i in iterable:
         logger.debug(f"{i=}")
@@ -76,58 +75,36 @@ def clean_up_this_mess(
             "-i",
             "--input",
             help="Either a list of input files or directories in which to look for FCS files",
-        )
+        ),
     ],
     output_dir: Annotated[
-        Path,
-        typer.Option(
-            "-o", "--output", help="Location to write cleaned FCS files"
-        )
+        Path, typer.Option("-o", "--output", help="Location to write cleaned FCS files")
     ] = DEFAULT_OUTPUT_DIR,
     method: Annotated[
-        str,
-        typer.Option(
-            "-m", "--method", help="Method to use when filtering events"
-        )
+        str, typer.Option("-m", "--method", help="Method to use when filtering events")
     ] = FilterMethod.sd,
-    suffix: Annotated[
-        Optional[str], # noqa UP007
-        typer.Option(
-            "-s", "--suffix", help="Suffix to append to the new files"
-        )
-    ] = None,
+    suffix: Annotated[str | None, typer.Option("-s", "--suffix", help="Suffix to append to the new files")] = None,
     output_format: Annotated[
         OutputFormat,
         typer.Option(
             "-f",
             "--format",
             help="Save the cleaned data as an FCS or AnnData object?",
-        )
+        ),
     ] = OutputFormat.fcs,
-    verbose: Annotated[ # noqa FBT002
-        bool,
-        typer.Option("-v", "--verbose")
-    ] = False,
-    version: Annotated[ # noqa FBT002
-        bool,
-        typer.Option(
-            "--version", callback=version_callback
-        )
-    ] = False,
-
+    verbose: Annotated[bool, typer.Option("-v", "--verbose")] = False,
+    version: Annotated[bool, typer.Option("--version", callback=version_callback)] = False,
 ) -> None:
     """Clean one or more CyTOF FCS files."""
 
     # if len(extra.args) > 0:
     #     extra_args = parse_extras(extra.args)
 
-    logger.add(
-        f"janitor_{datetime.now(tz=tz.tzlocal()).strftime('%d-%m-%Y--%H-%M-%S')}.log", level="DEBUG"
-    )
+    _ = logger.add(f"janitor_{datetime.now(tz=tz.tzlocal()).strftime('%d-%m-%Y--%H-%M-%S')}.log", level="DEBUG")
     if verbose:
-        logger.add(stderr, level="DEBUG")
+        _ = logger.add(stderr, level="DEBUG")
     else:
-        logger.add(stderr, level="ERROR")
+        _ = logger.add(stderr, level="ERROR")
 
     # if not isinstance(input_files, list):
     #     input_files = [input_files]
@@ -147,10 +124,8 @@ def clean_up_this_mess(
         # TODO: I don't really think pytometry is needed here.  Will remove later,
         # but for now this works so it stays.
         adata = pm.io.read_fcs(i)
-        pm.pp.split_signal(
-            adata=adata, var_key="channel", option="element", data_type="cytof"
-        )
-        cleaned_adata = take_out_the_trash(adata, method=method) # type: ignore
+        pm.pp.split_signal(adata=adata, var_key="channel", option="element", data_type="cytof")
+        cleaned_adata = take_out_the_trash(adata, method=method)  # type: ignore
 
         if suffix is not None:
             newfilename = output_dir.joinpath(f"{i.stem}{suffix}")
@@ -159,12 +134,9 @@ def clean_up_this_mess(
         newfilename.parent.mkdir(parents=True, exist_ok=True)
 
         if output_format == "fcs":
-
             remove_indices = adata.obs_names.difference(cleaned_adata.obs_names)
             fk_fcs = fk.Sample(i, ignore_offset_error=True)
             fk_fcs.set_flagged_events(remove_indices.astype(int).to_list())
-            fk_fcs.export(
-                newfilename.with_suffix(".fcs"), source="raw", exclude_flagged=True
-            )
+            fk_fcs.export(newfilename.with_suffix(".fcs"), source="raw", exclude_flagged=True)
         elif output_format == "anndata":
             cleaned_adata.write(newfilename.with_suffix(".h5ad"))
